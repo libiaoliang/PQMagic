@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.10)
 project(PQMagic)
 
 # Set c standard
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+endif()
 set(CMAKE_C_STANDARD 11)
 
 # Select PQMagic Version.
@@ -203,6 +205,15 @@ else()
         -Wpointer-arith -Wa,--noexecstack -fomit-frame-pointer -O3 -mtune=native
         -march=native -finline-functions
     )
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Debug build: enabling debug symbols and disabling optimization")
+    if(MSVC)
+        add_compile_options(/Od /Zi)
+    else()
+        add_compile_options(-O0 -g3 -fno-omit-frame-pointer)
+    endif()
 endif()
 
 #################################
@@ -893,4 +904,3 @@ file(WRITE ${CMAKE_BINARY_DIR}/cmake_clean_target.cmake
     "    message(STATUS \"Files removed from ${INSTALL_BIN_DIR}.\")\n"
     "endif()\n"
 )
-

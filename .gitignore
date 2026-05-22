@@ -1,3 +1,5 @@
 build*
+!build.sh
 tmp
 TARGET_STATIC_LIBS_SUFFIX
+!AGENTS.md
