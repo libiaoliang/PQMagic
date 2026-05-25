@@ -185,6 +185,7 @@ done
 
 provider_test_bin="$BUILD_DIR/test_aigis_provider_minimal"
 cc -I"$SCRIPT_DIR/include" \
+   -I"$SCRIPT_DIR/src/provider_compat" \
    -I"$ROOT_DIR" \
    -I"$ROOT_DIR/include" \
    -I"$ROOT_DIR/utils" \

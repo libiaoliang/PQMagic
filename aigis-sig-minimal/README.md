@@ -72,6 +72,10 @@ PQMAGIC_AIGIS_PARAM_PUBKEY
 PQMAGIC_AIGIS_PARAM_PRVKEY
 ```
 
+The copied EAL/BSL compatibility headers used for standalone builds live under
+`src/provider_compat/`; they are intentionally kept out of the public `include/`
+directory to avoid colliding with the real provider framework headers.
+
 For a TEE build, replace `utils/randombytes.c` with a TA-specific implementation
 that provides this function if the Linux provider is unavailable:
 

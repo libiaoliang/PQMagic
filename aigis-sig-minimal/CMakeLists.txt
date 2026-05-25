@@ -33,6 +33,7 @@ set(AIGIS_SIG_SOURCES
 
 set(COMMON_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
     "${PQMAGIC_ROOT}"
     "${PQMAGIC_ROOT}/include"
     "${PQMAGIC_ROOT}/utils"
@@ -75,6 +76,7 @@ add_library(aigis_sig_minimal_randombytes OBJECT
 )
 target_include_directories(aigis_sig_minimal_randombytes PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
     "${PQMAGIC_ROOT}/include"
     "${PQMAGIC_ROOT}/utils"
 )
@@ -86,6 +88,7 @@ if(USE_SM3)
     )
     target_include_directories(aigis_sig_minimal_hash PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
         "${PQMAGIC_ROOT}"
         "${PQMAGIC_ROOT}/include"
         "${PQMAGIC_ROOT}/hash/sm3"
@@ -96,6 +99,7 @@ else()
     )
     target_include_directories(aigis_sig_minimal_hash PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
         "${PQMAGIC_ROOT}"
         "${PQMAGIC_ROOT}/include"
         "${PQMAGIC_ROOT}/hash/keccak"
