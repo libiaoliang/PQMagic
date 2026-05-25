@@ -64,6 +64,7 @@ typedef int32_t (*CRYPT_EAL_ImplPkeyMgmtSetPrv)(void *ctx, const BSL_Param *para
 typedef int32_t (*CRYPT_EAL_ImplPkeyMgmtSetPub)(void *ctx, const BSL_Param *param);
 typedef int32_t (*CRYPT_EAL_ImplPkeyMgmtGetPrv)(const void *ctx, BSL_Param *param);
 typedef int32_t (*CRYPT_EAL_ImplPkeyMgmtGetPub)(const void *ctx, BSL_Param *param);
+typedef int32_t (*CRYPT_EAL_ImplPkeyMgmtCtrl)(void *ctx, int32_t cmd, void *val, uint32_t valLen);
 typedef void (*CRYPT_EAL_ImplPkeyMgmtFreeCtx)(void *ctx);
 
 #define CRYPT_EAL_IMPLPKEYSIGN_SIGN 1

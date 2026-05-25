@@ -66,6 +66,8 @@ static int RunOne(int32_t algId, uint32_t pkLen, uint32_t skLen, uint32_t sigLen
         (CRYPT_EAL_ImplPkeyMgmtGetPrv)FindFunc(keyFuncs, CRYPT_EAL_IMPLPKEYMGMT_GETPRV);
     CRYPT_EAL_ImplPkeyMgmtSetPub setPub =
         (CRYPT_EAL_ImplPkeyMgmtSetPub)FindFunc(keyFuncs, CRYPT_EAL_IMPLPKEYMGMT_SETPUB);
+    CRYPT_EAL_ImplPkeyMgmtCtrl ctrl =
+        (CRYPT_EAL_ImplPkeyMgmtCtrl)FindFunc(keyFuncs, CRYPT_EAL_IMPLPKEYMGMT_CTRL);
     CRYPT_EAL_ImplPkeyMgmtFreeCtx freeCtx =
         (CRYPT_EAL_ImplPkeyMgmtFreeCtx)FindFunc(keyFuncs, CRYPT_EAL_IMPLPKEYMGMT_FREECTX);
     CRYPT_EAL_ImplPkeySign sign =
@@ -73,7 +75,7 @@ static int RunOne(int32_t algId, uint32_t pkLen, uint32_t skLen, uint32_t sigLen
     CRYPT_EAL_ImplPkeyVerify verify =
         (CRYPT_EAL_ImplPkeyVerify)FindFunc(signFuncs, CRYPT_EAL_IMPLPKEYSIGN_VERIFY);
 
-    if (newCtx == NULL || genKey == NULL || getPub == NULL || getPrv == NULL ||
+    if (newCtx == NULL || genKey == NULL || getPub == NULL || getPrv == NULL || ctrl == NULL ||
         setPub == NULL || freeCtx == NULL || sign == NULL || verify == NULL) {
         return 5;
     }
@@ -88,6 +90,8 @@ static int RunOne(int32_t algId, uint32_t pkLen, uint32_t skLen, uint32_t sigLen
     uint8_t sk[AIGIS_SIG3_SECRETKEYBYTES];
     uint8_t sig[AIGIS_SIG3_SIGBYTES];
     uint32_t signLen = sigLen;
+    uint32_t ctrlPkLen = 0;
+    uint32_t ctrlSkLen = 0;
     const uint8_t msg[] = "pqmagic aigis provider smoke";
 
     BSL_Param getPubParams[] = {
@@ -104,7 +108,11 @@ static int RunOne(int32_t algId, uint32_t pkLen, uint32_t skLen, uint32_t sigLen
     };
 
     int ret = 0;
-    if (genKey(signCtx) != 0 ||
+    if (ctrl(signCtx, PQMAGIC_AIGIS_CTRL_GET_PUBKEY_LEN, &ctrlPkLen, sizeof(ctrlPkLen)) != 0 ||
+        ctrl(signCtx, PQMAGIC_AIGIS_CTRL_GET_PRVKEY_LEN, &ctrlSkLen, sizeof(ctrlSkLen)) != 0 ||
+        ctrlPkLen != pkLen ||
+        ctrlSkLen != skLen ||
+        genKey(signCtx) != 0 ||
         getPub(signCtx, getPubParams) != 0 ||
         getPrv(signCtx, getPrvParams) != 0 ||
         getPubParams[0].useLen != pkLen ||
@@ -146,4 +154,3 @@ int main(void)
 #endif
     return 0;
 }
-

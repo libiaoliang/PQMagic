@@ -190,6 +190,29 @@ static int32_t AigisPkeyGetPub(const void *ctx, BSL_Param *params)
     return AigisCopyToParam(aigisCtx->pk, aigisCtx->spec->pkLen, params, PQMAGIC_AIGIS_PARAM_PUBKEY);
 }
 
+static int32_t AigisPkeyCtrl(void *ctx, int32_t cmd, void *val, uint32_t valLen)
+{
+    const AigisPkeyCtx *aigisCtx = (const AigisPkeyCtx *)ctx;
+    if (aigisCtx == NULL || aigisCtx->spec == NULL || val == NULL) {
+        return PQMAGIC_AIGIS_ERR_NULL_INPUT;
+    }
+    if (valLen < sizeof(uint32_t)) {
+        return PQMAGIC_AIGIS_ERR_BUFFER_TOO_SMALL;
+    }
+
+    uint32_t *len = (uint32_t *)val;
+    switch (cmd) {
+        case PQMAGIC_AIGIS_CTRL_GET_PUBKEY_LEN:
+            *len = aigisCtx->spec->pkLen;
+            return PQMAGIC_AIGIS_SUCCESS;
+        case PQMAGIC_AIGIS_CTRL_GET_PRVKEY_LEN:
+            *len = aigisCtx->spec->skLen;
+            return PQMAGIC_AIGIS_SUCCESS;
+        default:
+            return PQMAGIC_AIGIS_ERR_NOT_SUPPORT;
+    }
+}
+
 static int32_t AigisPkeySign(void *ctx, int32_t mdAlgId, const uint8_t *data, uint32_t dataLen,
     uint8_t *sign, uint32_t *signLen)
 {
@@ -241,6 +264,7 @@ const CRYPT_EAL_Func g_pqmagicAigisKeyMgmt[] = {
     {CRYPT_EAL_IMPLPKEYMGMT_SETPUB, (void *)AigisPkeySetPub},
     {CRYPT_EAL_IMPLPKEYMGMT_GETPRV, (void *)AigisPkeyGetPrv},
     {CRYPT_EAL_IMPLPKEYMGMT_GETPUB, (void *)AigisPkeyGetPub},
+    {CRYPT_EAL_IMPLPKEYMGMT_CTRL, (void *)AigisPkeyCtrl},
     {CRYPT_EAL_IMPLPKEYMGMT_FREECTX, (void *)AigisPkeyFreeCtx},
     CRYPT_EAL_FUNC_END,
 };
@@ -314,4 +338,3 @@ int32_t PQMagic_AIGIS_ProviderInit(CRYPT_EAL_ProvMgrCtx *mgrCtx, BSL_Param *para
     *provCtx = NULL;
     return PQMAGIC_AIGIS_SUCCESS;
 }
-
