@@ -3,6 +3,9 @@
 This directory provides a small CMake entrypoint for compiling only the Aigis-sig
 signing implementation and its direct support code.
 
+All objects are built as position-independent code by default so the static
+archive can be linked into a shared object or TA image.
+
 It includes:
 
 - `sig/aigis-sig/std/sign.c`
