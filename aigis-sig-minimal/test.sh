@@ -11,6 +11,8 @@ MODES="${AIGIS_SIG_MODES:-1;2;3}"
 CLEAN=1
 NO_BUILD=0
 EXTRA_COMPILE_ARGS=()
+ASAN=0
+RANDOMBYTES_SOURCE=""
 
 usage() {
     cat <<'USAGE'
@@ -28,6 +30,9 @@ Options:
   --build-dir DIR    Use a custom build directory. Default: build-aigis-sig-minimal-test.
   --jobs N           Parallel build jobs. Default: number of CPU cores.
   --shake            Use SHAKE instead of the default SM3 hash component.
+  --asan             Build and link tests with AddressSanitizer instrumentation.
+  --randombytes-source FILE
+                     Use FILE as the randombytes.c implementation.
   --no-clean         Keep the old build directory and build incrementally.
   --no-build         Do not build first; use an existing minimized library.
   --help             Show this help.
@@ -80,6 +85,19 @@ while [ "$#" -gt 0 ]; do
             ;;
         --shake)
             EXTRA_COMPILE_ARGS+=("--shake")
+            ;;
+        --asan)
+            ASAN=1
+            EXTRA_COMPILE_ARGS+=("--asan")
+            ;;
+        --randombytes-source)
+            shift
+            if [ "$#" -eq 0 ]; then
+                echo "error: --randombytes-source requires a C file" >&2
+                exit 2
+            fi
+            RANDOMBYTES_SOURCE="$1"
+            EXTRA_COMPILE_ARGS+=("--randombytes-source" "$1")
             ;;
         --no-clean)
             CLEAN=0
@@ -140,6 +158,11 @@ fi
 
 IFS=';' read -r -a MODE_ARRAY <<< "$MODES"
 MODE_DEFINES=()
+ASAN_FLAGS=()
+if [ "$ASAN" -eq 1 ]; then
+    ASAN_FLAGS=(-fsanitize=address -fno-omit-frame-pointer -g)
+fi
+
 for mode in "${MODE_ARRAY[@]}"; do
     case "$mode" in
         1)
@@ -175,6 +198,7 @@ for mode in "${MODE_ARRAY[@]}"; do
        -I"$ROOT_DIR/utils" \
        -I"$ROOT_DIR/sig/aigis-sig/std" \
        -DAIGIS_SIG_MODE="$mode" \
+       "${ASAN_FLAGS[@]}" \
        "$ROOT_DIR/sig/aigis-sig/std/test/test_aigis.c" \
        "$LIB_PATH" \
        -o "$test_bin"
@@ -191,6 +215,7 @@ cc -I"$SCRIPT_DIR/include" \
    -I"$ROOT_DIR/utils" \
    -I"$ROOT_DIR/sig/aigis-sig/std" \
    "${MODE_DEFINES[@]}" \
+   "${ASAN_FLAGS[@]}" \
    "$SCRIPT_DIR/test/provider_smoke.c" \
    "$LIB_PATH" \
    -o "$provider_test_bin"

@@ -31,6 +31,15 @@ Build only Aigis-sig2:
 aigis-sig-minimal/compile.sh --mode 2
 ```
 
+Build with AddressSanitizer:
+
+```bash
+aigis-sig-minimal/compile.sh --asan
+```
+
+For a static archive, the final executable or shared object that consumes the
+archive must also be linked with `-fsanitize=address`.
+
 Run the minimized build against the original Aigis-sig basic test:
 
 ```bash
@@ -41,6 +50,12 @@ Test only Aigis-sig2:
 
 ```bash
 aigis-sig-minimal/test.sh --mode 2
+```
+
+Run tests with AddressSanitizer:
+
+```bash
+aigis-sig-minimal/test.sh --asan
 ```
 
 The static library target is:
@@ -80,8 +95,24 @@ The copied EAL/BSL compatibility headers used for standalone builds live under
 directory to avoid colliding with the real provider framework headers.
 
 For a TEE build, replace `utils/randombytes.c` with a TA-specific implementation
-that provides this function if the Linux provider is unavailable:
+if the Linux provider is unavailable:
 
 ```c
 void randombytes(uint8_t *out, size_t outlen);
 ```
+
+Two build paths are available:
+
+```bash
+aigis-sig-minimal/compile.sh --randombytes-source path/to/randombytes_tee.c
+```
+
+or, for a static archive, leave `randombytes` unresolved and provide it from the
+final TA project:
+
+```bash
+aigis-sig-minimal/compile.sh --target pqmagic_aigis_sig_minimal_static --external-randombytes
+```
+
+See `examples/randombytes_tee.c.example` for a minimal `TEE_GenerateRandom`
+adapter.

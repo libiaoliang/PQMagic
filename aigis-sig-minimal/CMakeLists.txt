@@ -9,8 +9,22 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 get_filename_component(PQMAGIC_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
 set(AIGIS_SIG_MODES "1;2;3" CACHE STRING "Aigis-sig modes to compile")
+set(AIGIS_RANDOMBYTES_SOURCE "${PQMAGIC_ROOT}/utils/randombytes.c" CACHE STRING
+    "randombytes source file, or 'external' to leave randombytes unresolved for the final application")
 option(USE_SM3 "Use SM3 as hash component" ON)
 option(USE_SHAKE "Use SHAKE as hash component" OFF)
+option(ENABLE_ASAN "Build with AddressSanitizer instrumentation" OFF)
+
+if(ENABLE_ASAN)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        message(STATUS "AddressSanitizer: ENABLED")
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    else()
+        message(FATAL_ERROR "ENABLE_ASAN is only wired for GCC/Clang-compatible compilers")
+    endif()
+endif()
 
 if(USE_SHAKE)
     set(USE_SM3 OFF)
@@ -72,15 +86,25 @@ add_library(aigis_sig_minimal_provider OBJECT
 target_include_directories(aigis_sig_minimal_provider PRIVATE ${COMMON_INCLUDE_DIRS})
 target_compile_definitions(aigis_sig_minimal_provider PRIVATE ${PROVIDER_MODE_DEFINES})
 
-add_library(aigis_sig_minimal_randombytes OBJECT
-    "${PQMAGIC_ROOT}/utils/randombytes.c"
-)
-target_include_directories(aigis_sig_minimal_randombytes PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
-    "${PQMAGIC_ROOT}/include"
-    "${PQMAGIC_ROOT}/utils"
-)
+set(AIGIS_RANDOMBYTES_OBJECTS "")
+if(AIGIS_RANDOMBYTES_SOURCE STREQUAL "external")
+    message(STATUS "randombytes: external symbol supplied by final application")
+else()
+    if(NOT IS_ABSOLUTE "${AIGIS_RANDOMBYTES_SOURCE}")
+        get_filename_component(AIGIS_RANDOMBYTES_SOURCE "${AIGIS_RANDOMBYTES_SOURCE}" ABSOLUTE)
+    endif()
+    message(STATUS "randombytes source: ${AIGIS_RANDOMBYTES_SOURCE}")
+    add_library(aigis_sig_minimal_randombytes OBJECT
+        "${AIGIS_RANDOMBYTES_SOURCE}"
+    )
+    target_include_directories(aigis_sig_minimal_randombytes PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/provider_compat"
+        "${PQMAGIC_ROOT}/include"
+        "${PQMAGIC_ROOT}/utils"
+    )
+    set(AIGIS_RANDOMBYTES_OBJECTS $<TARGET_OBJECTS:aigis_sig_minimal_randombytes>)
+endif()
 
 if(USE_SM3)
     add_library(aigis_sig_minimal_hash OBJECT
@@ -110,7 +134,7 @@ endif()
 add_library(pqmagic_aigis_sig_minimal_static STATIC
     ${AIGIS_SIG_OBJECTS}
     $<TARGET_OBJECTS:aigis_sig_minimal_provider>
-    $<TARGET_OBJECTS:aigis_sig_minimal_randombytes>
+    ${AIGIS_RANDOMBYTES_OBJECTS}
     $<TARGET_OBJECTS:aigis_sig_minimal_hash>
 )
 
@@ -121,7 +145,7 @@ set_target_properties(pqmagic_aigis_sig_minimal_static PROPERTIES
 add_library(pqmagic_aigis_sig_minimal SHARED
     ${AIGIS_SIG_OBJECTS}
     $<TARGET_OBJECTS:aigis_sig_minimal_provider>
-    $<TARGET_OBJECTS:aigis_sig_minimal_randombytes>
+    ${AIGIS_RANDOMBYTES_OBJECTS}
     $<TARGET_OBJECTS:aigis_sig_minimal_hash>
 )
 

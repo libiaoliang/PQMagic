@@ -11,6 +11,8 @@ MODES="${AIGIS_SIG_MODES:-1;2;3}"
 CLEAN=1
 TARGET=""
 EXTRA_CMAKE_ARGS=()
+ASAN=0
+RANDOMBYTES_DESC="default"
 
 usage() {
     cat <<'USAGE'
@@ -28,6 +30,11 @@ Options:
   --target NAME      Build one CMake target, e.g. pqmagic_aigis_sig_minimal_static.
   --jobs N           Parallel build jobs. Default: number of CPU cores.
   --shake            Use SHAKE instead of the default SM3 hash component.
+  --asan             Build with AddressSanitizer instrumentation.
+  --randombytes-source FILE
+                     Use FILE as the randombytes.c implementation.
+  --external-randombytes
+                     Do not compile randombytes; final application must provide it.
   --no-clean         Keep the old build directory and build incrementally.
   --help             Show this help.
 
@@ -89,6 +96,27 @@ while [ "$#" -gt 0 ]; do
         --shake)
             EXTRA_CMAKE_ARGS+=("-DUSE_SHAKE=ON")
             ;;
+        --asan)
+            ASAN=1
+            EXTRA_CMAKE_ARGS+=("-DENABLE_ASAN=ON")
+            ;;
+        --randombytes-source)
+            shift
+            if [ "$#" -eq 0 ]; then
+                echo "error: --randombytes-source requires a C file" >&2
+                exit 2
+            fi
+            case "$1" in
+                /*) randombytes_source="$1" ;;
+                *) randombytes_source="$(pwd)/$1" ;;
+            esac
+            RANDOMBYTES_DESC="$randombytes_source"
+            EXTRA_CMAKE_ARGS+=("-DAIGIS_RANDOMBYTES_SOURCE=$randombytes_source")
+            ;;
+        --external-randombytes)
+            RANDOMBYTES_DESC="external"
+            EXTRA_CMAKE_ARGS+=("-DAIGIS_RANDOMBYTES_SOURCE=external")
+            ;;
         --no-clean)
             CLEAN=0
             ;;
@@ -123,6 +151,8 @@ echo "    build type : $BUILD_TYPE"
 echo "    build dir  : $BUILD_DIR"
 echo "    modes      : $MODES"
 echo "    jobs       : $JOBS"
+echo "    asan       : $ASAN"
+echo "    random     : $RANDOMBYTES_DESC"
 
 cmake -S "$SCRIPT_DIR" -B "$BUILD_DIR" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
@@ -139,4 +169,3 @@ fi
 echo "==> Done"
 echo "    static library: $BUILD_DIR/libpqmagic_aigis_sig_minimal_std.a"
 echo "    shared library: $BUILD_DIR/libpqmagic_aigis_sig_minimal_std.so"
-
